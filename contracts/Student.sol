@@ -79,11 +79,10 @@ contract StudentContract is Context{
         student.status = RegisteredStatus.REGISTERED;
         student._payments = new Payment[](0);
 
-
         emit LogRegistered(_msgSender(), _mat_Number, block.timestamp);
     }
 
-    //Retrieve student
+    //Retrieve student record
     function getStudent (string memory _mat_Number) external view returns(uint, address, string memory, RegisteredStatus, Payment[]) {
         require(studentExist(_mat_Number), 'No student Found');
         Student storage student = Students[_mat_Number];
@@ -94,20 +93,35 @@ contract StudentContract is Context{
                 student._payments);
     }
 
-    // update student
+    // update student record
     function updateStudent(string memory _mat_Number, string memory _name) external {
         require(studentExist(_mat_Number), 'No student Found');
         Students[_mat_Number].name = _name;
         emit LogUpdated(_msgSender(), _mat_Number, block.timestamp);
     }
 
+    //Delete student. Only Admin can Delete
+    function deleteStudent(string memory _mat_Number) external {
+
+    }
+
+    //Check for student Existence before performing any action
     function studentExist (string memory _mat_Number) internal pure returns(bool){
         if(matNumbers.length == 0) return false;
         return (matNumbers[Students[_mat_Number].studentIndex] == _mat_Number);
     }
 
-    function payFees(string memory _mat_Number, uint paymentId) external payable checkValue(){
+    //returns the number of student available unordered array of matNumbers
+    function studentCount() external pure returns(uint){
+        return matNumbers.length;
+    }
 
+    function getStudentAtIndex(uint index) external pure returns(string memory){
+        return matNumbers[index];
+    }
+
+    //function for student to pay fees
+    function payFees(string memory _mat_Number, uint paymentId) external payable checkValue(){
       require();
       require (_msgSender() != address(0), "Invalid Address...");
 
