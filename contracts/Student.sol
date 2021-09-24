@@ -6,21 +6,26 @@ pragma solidity ^0.8.0;
  * The Student contract does this and that...
  */
  import "./PaymentProcessor.sol";
- import "../../../../utils/Context.sol";
+ import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 contract StudentContract is Context{
 
     uint internal paymentId = 0;
-    uint internal studentIndex = 0;
+
     PaymentProcessor internal paymentProcessorAddress;
 
 
     event LogRegistered(
-        address indexed student,
+        address indexed who,
         string mat_num,
         uint when
         );
+
+    event LogUpdated(
+        address indexed by,
+        string mat_num,
+        uint when);
 
     enum RegisteredStatus { NOT_REGISTERED, REGISTERED }
     RegisteredStatus status = RegisteredStatus.NOT_REGISTERED;
@@ -35,9 +40,9 @@ contract StudentContract is Context{
 
 
     struct Student{
+        uint studentIndex;
         address studentAddress;
         string name;
-        uint studentIndex;
         RegisteredStatus status;
         Payment[] _payments;
     }
@@ -58,40 +63,52 @@ contract StudentContract is Context{
 
 
 
-    //FUNCTION TO REGISTER A STUDENT
+    //create student
     function createStudent (string memory _mat_Number, string memory _name) external {
 
         require (_msgSender() != address(0), "Invalid address.");
         require (_msgSender() != Students[_mat_Number].studentAddress, "Student Already Exist.");
         require (Students[_mat_Number].status != RegisteredStatus.REGISTERED, "Student Already Exist.");
 
-
+        matNumbers.push(_mat_Number);
         Student storage student = Students[_mat_Number];
 
+        student.studentIndex = matNumbers.length;
         student.studentAddress = _msgSender();
         student.name = _name;
         student.status = RegisteredStatus.REGISTERED;
+        student._payments = new Payment[](0);
 
-        matNumbers.push(_mat_Number)
+
         emit LogRegistered(_msgSender(), _mat_Number, block.timestamp);
     }
 
-    function getStudent (string memory _mat_Number) external view returns(string memory, string memory, address) {
-        //copy the data into memory
-        address caller = _msgSender();
-        require (matNum_to_address[_mat_Number] == caller, "NOT FOUND...");
-        Student memory student = Students[caller];
-        return (student.mat_Num, student.name, matNum_to_address[_mat_Number] );
+    //Retrieve student
+    function getStudent (string memory _mat_Number) external view returns(uint, address, string memory, RegisteredStatus, Payment[]) {
+        require(studentExist(_mat_Number), 'No student Found');
+        Student storage student = Students[_mat_Number];
+        return(student.studentIndex,
+                student.studentAddress,
+                student.name,
+                student.status,
+                student._payments);
     }
 
-    function getStudentAddress(string memory _mat_Num) external view returns(address){
-      return matNum_to_address[_mat_Num];
+    // update student
+    function updateStudent(string memory _mat_Number, string memory _name) external {
+        require(studentExist(_mat_Number), 'No student Found');
+        Students[_mat_Number].name = _name;
+        emit LogUpdated(_msgSender(), _mat_Number, block.timestamp);
     }
 
+    function studentExist (string memory _mat_Number) internal pure returns(bool){
+        if(matNumbers.length == 0) return false;
+        return (matNumbers[Students[_mat_Number].studentIndex] == _mat_Number);
+    }
 
     function payFees(string memory _mat_Number, uint paymentId) external payable checkValue(){
 
-      require(matNum_to_address[_mat_Number] == _msgSender(), "Only valid student can pay fees...");
+      require();
       require (_msgSender() != address(0), "Invalid Address...");
 
       uint amount = msg.value;
