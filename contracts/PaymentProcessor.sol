@@ -9,22 +9,19 @@ import '@openzeppelin/contracts/access/Ownable.sol';
  * The PaymentProcessor contract does this and that...
  */
 contract PaymentProcessor is Ownable {
-    IERC20 private UJToken;
 
+    IERC20 private UJToken;
     uint private SCHOOL_FEES_PRICE;
 
-    event PaymentDone(
-        address indexed student_payer,
-        uint amount,
-        uint paymentId,
-        uint date
-    );
+    event LogPayment(address indexed who,
+                      address indexed to,
+                      string memory payer,
+                      uint amount,
+                      uint date);
 
-    event LogRecieved(
-      address caller,
-      uint date
-    );
-
+    event LogRefund(address indexed to, uint amount);
+    event LogWidrawal(address indexed by, uint amount);
+    event LogFeeAmount(address indexed by, uint amount)
 
 
 
@@ -47,18 +44,33 @@ contract PaymentProcessor is Ownable {
 
   function makePayment(address indexed _payer_address, string memory _payer, uint _payer_amount) external payable{
     require (_payer_address != address(0), 'PaymentProcessor: Invalid Address.');
-    UJToken.transferFrom(_payer_address, address(this), _payer_amount);
-    emit PaymentDone(_payer_address, _amount, _paymentId, block.timestamp);
+    UJToken.transferFrom(_payer_address, payable(address(this)), _payer_amount);
+    emit LogPayment(_payer_address, address(this), _payer, _amount, block.timestamp);
   }
 
+  function setSchoolfFees(uint _amount) external {
+    require(owner() == _msgSender(), 'Ownable: Only owner can initiate transaction.');
+    SCHOOL_FEES_PRICE = _amount;
+    emit LogFeeAmount(_msgSender(), _amount);
+  }
+
+  function getSchoolFees() external view returns(uint){ return SCHOOL_FEES_PRICE; }
+
   function withdrawal() external returns(bool){
+    require(owner() == _msgSender(), 'Ownable: Only owner can initiate transaction.');
+
     uint balanceBeforeTransfer = address(this).balance;
-    (bool success, ) = payable(owner()).call{value:balanceBeforeTransfer}("");
-    require(success, "Transfer failed.");
-    return true;
+    (bool success, ) = payable(_msgSender()).call{value:balanceBeforeTransfer}("");
+
+    if(success){
+      emit LogWidrawal(_msgSender(), balanceBeforeTransfer);
+      return true
+    }
+    revert('Transaction Failed.');
   }
 
   function refund(address payable reciever, uint amount) external{
+    require(owner() == _msgSender(), 'Ownable: Only owner can initiate transaction.');
     reciever.transfer(amount);
     emit Refunded(reciever, block.timestamp);
   }

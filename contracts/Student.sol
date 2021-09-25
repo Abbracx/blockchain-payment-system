@@ -48,13 +48,6 @@ contract StudentContract is Context{
       paymentProcessorAddress = _paymentProcessorAddress;
     }
 
-    //MODIFIERS
-     modifier checkValue() {
-      if (msg.value <= 0) revert();
-      _;
-    }
-
-
 
     //create student
     function createStudent (string memory _mat_Number, string memory _name) external returns(uint){
@@ -113,11 +106,11 @@ contract StudentContract is Context{
     }
 
     //returns the number of student available unordered array of matNumbers
-    function studentCount() external pure returns(uint){
+    function studentCount() external view returns(uint){
         return matNumbers.length;
     }
 
-    function getStudentAtIndex(uint index) external pure returns(string memory){
+    function getStudentAtIndex(uint index) external view returns(string memory){
         return matNumbers[index];
     }
 
