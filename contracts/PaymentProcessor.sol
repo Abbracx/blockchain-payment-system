@@ -25,10 +25,7 @@ contract PaymentProcessor is Ownable {
       uint date
     );
 
-    event Refunded(
-      address indexed who,
-      uint when
-      );
+
 
 
   constructor(address UJTokenAddress, uint _price) {
@@ -48,10 +45,10 @@ contract PaymentProcessor is Ownable {
     _;
   }
 
-  function pay(uint _amount, uint _paymentId, address _student_address) external payable{
-    require (_student_address != address(0));
-    UJToken.transferFrom(_student_address, address(this), _amount);
-    emit PaymentDone(_student_address, _amount, _paymentId, block.timestamp);
+  function makePayment(address indexed _payer_address, string memory _payer, uint _payer_amount) external payable{
+    require (_payer_address != address(0), 'PaymentProcessor: Invalid Address.');
+    UJToken.transferFrom(_payer_address, address(this), _payer_amount);
+    emit PaymentDone(_payer_address, _amount, _paymentId, block.timestamp);
   }
 
   function withdrawal() external returns(bool){

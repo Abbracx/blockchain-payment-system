@@ -16,16 +16,9 @@ contract StudentContract is Context{
     PaymentProcessor internal paymentProcessorAddress;
 
 
-    event LogRegistered(
-        address indexed who,
-        string mat_num,
-        uint when
-        );
-
-    event LogUpdated(
-        address indexed by,
-        string mat_num,
-        uint when);
+    event LogRegistered(address indexed who, string mat_num, uint when);
+    event LogUpdated(address indexed by, string mat_num, uint when);
+    event LogDeleted(address indexed by, string mat_num, uint when);
 
     enum RegisteredStatus { NOT_REGISTERED, REGISTERED }
     RegisteredStatus status = RegisteredStatus.NOT_REGISTERED;
@@ -64,22 +57,22 @@ contract StudentContract is Context{
 
 
     //create student
-    function createStudent (string memory _mat_Number, string memory _name) external {
+    function createStudent (string memory _mat_Number, string memory _name) external returns(uint){
 
         require (_msgSender() != address(0), "Invalid address.");
         require (_msgSender() != Students[_mat_Number].studentAddress, "Student Already Exist.");
         require (Students[_mat_Number].status != RegisteredStatus.REGISTERED, "Student Already Exist.");
 
-        matNumbers.push(_mat_Number);
         Student storage student = Students[_mat_Number];
 
-        student.studentIndex = matNumbers.length;
+        student.studentIndex = matNumbers.push(_mat_Number);
         student.studentAddress = _msgSender();
         student.name = _name;
         student.status = RegisteredStatus.REGISTERED;
         student._payments = new Payment[](0);
 
         emit LogRegistered(_msgSender(), _mat_Number, block.timestamp);
+        return matNumbers.length
     }
 
     //Retrieve student record
@@ -101,8 +94,16 @@ contract StudentContract is Context{
     }
 
     //Delete student. Only Admin can Delete
-    function deleteStudent(string memory _mat_Number) external {
+    function deleteStudent(string memory _mat_Number) external returns(string memory){
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+        require(studentExist(_mat_Number), 'Sorry can not delete none existent student.');
 
+        uint valToDel = Students[_mat_Number].studentIndex;
+        string memory keyToMove = matNumbers[matNumbers.length];
+        matNumbers[valToDel] = keyToMove;
+        Students[keyToMove].index = valToDel;
+        matNumbers.length--;
+        return _mat_Number;
     }
 
     //Check for student Existence before performing any action
@@ -121,12 +122,10 @@ contract StudentContract is Context{
     }
 
     //function for student to pay fees
-    function payFees(string memory _mat_Number, uint paymentId) external payable checkValue(){
-      require();
-      require (_msgSender() != address(0), "Invalid Address...");
-
-      uint amount = msg.value;
-      payment_processor.pay(amount, paymentId, matNum_to_address[_mat_Number]);
+    function payFees(string memory _mat_Number, uint _amount) external payable checkValue(){
+      require(studentExist(_mat_Number), "Sorry only valid student can pay fees.");
+      require (Students[_mat_Number].studentAddress == _msgSender(), "Invalid Wallet Address...");
+      paymentProcessorAddress.makePayment(_msgSender(), _mat_Number, _amount);
     }
 
 }
