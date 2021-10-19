@@ -3,11 +3,12 @@ const PaymentProcessor = artifacts.require('PaymentProcessor.sol');
 
 
 module.exports = async function (deployer, network, addresses) {
-    const [bursary, payer, _] = addresses;
+    const [admin,  payer, _] = addresses;
 
     if(network === 'develop' || network === 'development'){
 
         await deployer.deploy(UJToken); //sends the transaction
+        if
         const ujtoken = await UJToken.deployed(); // waits for it to mined.
 
         /**

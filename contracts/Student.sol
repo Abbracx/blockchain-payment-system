@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
  import "@openzeppelin/contracts/access/Ownable.sol";
 
 
-contract StudentContract is Context{
+contract StudentContract is Ownable{
 
     uint internal paymentId = 0;
 
@@ -23,6 +23,7 @@ contract StudentContract is Context{
     enum RegisteredStatus { NOT_REGISTERED, REGISTERED }
     RegisteredStatus status = RegisteredStatus.NOT_REGISTERED;
 
+    // Payment struct data type
     struct Payment {
         uint paymentId;
         bytes32 session;
@@ -31,7 +32,7 @@ contract StudentContract is Context{
         bool paymentStatus;
     }
 
-
+// Student data structure type
     struct Student{
         uint studentIndex;
         address studentAddress;
@@ -65,7 +66,7 @@ contract StudentContract is Context{
         student._payments = new Payment[](0);
 
         emit LogRegistered(_msgSender(), _mat_Number, block.timestamp);
-        return matNumbers.length
+        return matNumbers.length;
     }
 
     //Retrieve student record
@@ -115,7 +116,7 @@ contract StudentContract is Context{
     }
 
     //function for student to pay fees
-    function payFees(string memory _mat_Number, uint _amount) external payable checkValue(){
+    function payFees(string memory _mat_Number, uint _amount) external payable {
       require(studentExist(_mat_Number), "Sorry only valid student can pay fees.");
       require (Students[_mat_Number].studentAddress == _msgSender(), "Invalid Wallet Address...");
       paymentProcessorAddress.makePayment(_msgSender(), _mat_Number, _amount);

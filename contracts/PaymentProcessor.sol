@@ -3,6 +3,7 @@
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+// import './UJToken.sol';
 // import 'github.com/OpenZeppelin/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol';
 
 /**
@@ -15,13 +16,13 @@ contract PaymentProcessor is Ownable {
 
     event LogPayment(address indexed who,
                       address indexed to,
-                      string memory payer,
+                      string payer,
                       uint amount,
                       uint date);
 
     event LogRefund(address indexed to, uint amount);
     event LogWidrawal(address indexed by, uint amount);
-    event LogFeeAmount(address indexed by, uint amount)
+    event LogFeeAmount(address indexed by, uint amount);
 
 
 
@@ -42,14 +43,16 @@ contract PaymentProcessor is Ownable {
     _;
   }
 
-  function makePayment(address indexed _payer_address, string memory _payer, uint _payer_amount) external payable{
+
+  function makePayment(address _payer_address, string memory _payer, uint _payer_amount) external payable {
     require (_payer_address != address(0), 'PaymentProcessor: Invalid Address.');
     if(_payer_amount >= SCHOOL_FEES_PRICE){
       UJToken.transferFrom(_payer_address, payable(address(this)), _payer_amount);
-      emit LogPayment(_payer_address, address(this), _payer, _amount, block.timestamp);
+      emit LogPayment(_payer_address, address(this), _payer, _payer_amount, block.timestamp);
     }
     revert('Insufficient payment fee.');
   }
+
 
   function setSchoolfFees(uint _amount) external {
     require(owner() == _msgSender(), 'Ownable: Only owner can initiate transaction.');
@@ -59,9 +62,10 @@ contract PaymentProcessor is Ownable {
 
   function getSchoolFees() external view returns(uint){ return SCHOOL_FEES_PRICE; }
 
+
   function withdrawal() external returns(bool){
     require(owner() == _msgSender(), 'Ownable: Only owner can initiate transaction.');
-    require(address(this).balance > 0, "Cant withdraw 0 UJT")
+    require(address(this).balance > 0, "Cant withdraw 0 UJT");
     uint balanceBeforeTransfer = address(this).balance;
     (bool success, ) = payable(_msgSender()).call{value:balanceBeforeTransfer}(""); //Read About these again
 
@@ -72,20 +76,21 @@ contract PaymentProcessor is Ownable {
     return false;
   }
 
-  function refund(address payable reciever, uint amount) external{
+
+  function refund(address payable reciever, uint _amount) external{
     require(owner() == _msgSender(), 'Ownable: Only owner can initiate transaction.');
-    reciever.transfer(amount);
-    emit Refunded(reciever, block.timestamp);
+    reciever.transfer(_amount);
+    emit LogRefund(reciever, _amount);
   }
 
   // call back functions for plain ether transfer to avoid sending to address zero
-  fallback() external payable {
-      emit LogRecieved(_msgSender(), block.timestamp);
-      }
+  // fallback() external payable {
+  //     emit LogRecieved(_msgSender(), block.timestamp);
+  //     }
 
-  receive() external payable {
-    emit LogRecieved(_msgSender(), block.timestamp);
-  }
+  // receive() external payable {
+  //   emit LogRecieved(_msgSender(), block.timestamp);
+  // }
 }
 
 
